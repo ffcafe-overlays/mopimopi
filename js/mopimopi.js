@@ -2327,6 +2327,7 @@ function inputColor(a) {
             case 'CNJ':
                 return '#' + localStorage.getItem("heal1");
             case 'SCH':
+            case 'SGE':
                 return '#' + localStorage.getItem("heal2");
             case 'AST':
                 return '#' + localStorage.getItem("heal3");
@@ -2346,6 +2347,7 @@ function inputColor(a) {
                 return '#' + localStorage.getItem("dps4");
             case 'SMN':
             case 'ACN':
+            case 'RPR':
                 return '#' + localStorage.getItem("dps5");
             case 'RDM':
                 return '#' + localStorage.getItem("dps9");
