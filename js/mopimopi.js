@@ -14,7 +14,8 @@ var customFlag = !0;
 var initACTElement = [0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 var initHealerElement = [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];
 var OnlyUsers = 0;
-var objTime;
+var hidden = false
+var objTimeArray = new Array();
 var mpLang = [];
 var dataAbbList = null;
 var palette = {
@@ -685,7 +686,13 @@ function autoHidden(flag) {
     if (localStorage.getItem("autoHide") == 0 || OnlyUsers == 0)
         return; else {
         if (flag == "OFF") {
-            objTime = setTimeout(function () {
+            if (hidden) {
+                return;
+            }
+            objTimeArray.unshift(setTimeout(function () {
+                if (hidden) {
+                    return;
+                }
                 if (OnlyUsers > 9 && localStorage.getItem('raidMode') == 1) {
                     $('body').find('[name=raid]').addClass('hidden')
                 }
@@ -703,9 +710,10 @@ function autoHidden(flag) {
                         else if (localStorage.getItem('lang') == "en")
                             var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>'); else var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>');
                         Materialize.toast($toastContent, 3000)
+                        hidden = true
                     }
                 }
-            }, parseInt(localStorage.getItem('autoHideTime')) * 60000)
+            }, parseInt(localStorage.getItem('autoHideTime')) * 60000))
         }
         else {
             if (OnlyUsers > 9 && localStorage.getItem('raidMode') == 1) {
@@ -714,7 +722,12 @@ function autoHidden(flag) {
             else {
                 $('body').find('#graphTableBody, #graphTableHeader').removeClass('hidden')
             }
-            clearTimeout(objTime);
+            objTime = objTimeArray.shift()            
+            while (typeof(objTime) != 'undefined') {
+                clearTimeout(objTime);
+                objTime = objTimeArray.shift();
+            }
+            hidden = false
             if (lastCombat.title != 'Encounter')
                 autoHidden("OFF")
         }
@@ -1717,10 +1730,9 @@ function onUpdateCSS() {
 }
 
 function onOverlayDataUpdate(e) {
-    if (localStorage.getItem('history') == 1)
-        closeHistory();
     lastCombat = new Combatant(e, 'encdps');
     lastCombatHPS = new Combatant(e, 'enchps');
+    startFlag = lastCombat.isActive == 'false' ? 0 : 1
     setTimeout(function () {
         saveLog();
         update()
@@ -1745,6 +1757,10 @@ function onUpdateUserData() {
     if (startFlag == 1) {
         $('body').find('.dropdown-button').dropdown('close');
         startFlag = 0
+        hidden = false
+    }
+    if (hidden) {
+        return;
     }
     $("nav [name=main]").find(".time").text(lastCombat.duration);
     $("nav [name=main]").find(".info .bigText").text(lastCombat.title);
@@ -2446,7 +2462,7 @@ function saveLog() {
         if (lastCombat.title != 'Encounter') {
             encounterArray.unshift({lastCombat: lastCombat, lastCombatHPS: lastCombatHPS});
             if (encounterArray.length >= 2) {
-                if (encounterArray[1].combatKey == lastCombat.combatKey) {
+                if (encounterArray[1].lastCombat.combatKey == lastCombat.combatKey) {
                     encounterArray.shift()
                 } else {
                     historyAddRow()
@@ -2454,15 +2470,19 @@ function saveLog() {
             } else {
                 historyAddRow()
             }
-            autoHidden("OFF");
             saveLogFlag = !0
-            startFlag = 1
+            if (!hidden) {
+                autoHidden("OFF");
+            }
         }
     }
 }
 
 function historyAddRow() {
-    console.log(lastCombat)
+    if (localStorage.getItem('history') == 1) {
+        closeHistory();
+    }
+    // console.log(lastCombat)
     var wrap = document.getElementById('historyListBody');
     var newHistory = document.createElement("div");
     var oldHistory = document.getElementById('oldHistoryBody');
