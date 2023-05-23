@@ -14,7 +14,7 @@ var customFlag = !0;
 var initACTElement = [0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 var initHealerElement = [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];
 var OnlyUsers = 0;
-var autoHiddenToastSent = false
+var hidden = false
 var objTime;
 var mpLang = [];
 var dataAbbList = null;
@@ -687,6 +687,9 @@ function autoHidden(flag) {
         return; else {
         if (flag == "OFF") {
             objTime = setTimeout(function () {
+                if (hidden) {
+                    return;
+                }
                 if (OnlyUsers > 9 && localStorage.getItem('raidMode') == 1) {
                     $('body').find('[name=raid]').addClass('hidden')
                 }
@@ -694,7 +697,7 @@ function autoHidden(flag) {
                     $('body').find('#graphTableBody, #graphTableHeader').addClass('hidden')
                 }
                 if ($('body').find('[name=main]').hasClass("hidden") == !1 && localStorage.getItem("autoHide") == 1) {
-                    if (!autoHiddenToastSent && localStorage.getItem("toast") == 1) {
+                    if (localStorage.getItem("toast") == 1) {
                         if (localStorage.getItem('lang') == "kr")
                             var $toastContent = $('<div class="row col s12 white-text center">< 자동 숨기기 ><br>데이터 테이블을 다시 보고 싶다면 오버레이를 클릭하세요!</div>');
                         else if (localStorage.getItem("lang") == "cn")
@@ -704,7 +707,7 @@ function autoHidden(flag) {
                         else if (localStorage.getItem('lang') == "en")
                             var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>'); else var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>');
                         Materialize.toast($toastContent, 3000)
-                        autoHiddenToastSent = true
+                        hidden = true
                     }
                 }
             }, parseInt(localStorage.getItem('autoHideTime')) * 60000)
@@ -716,7 +719,6 @@ function autoHidden(flag) {
             else {
                 $('body').find('#graphTableBody, #graphTableHeader').removeClass('hidden')
             }
-            autoHiddenToastSent = false
             clearTimeout(objTime);
             if (lastCombat.title != 'Encounter')
                 autoHidden("OFF")
@@ -1746,6 +1748,10 @@ function onUpdateUserData() {
     if (startFlag == 1) {
         $('body').find('.dropdown-button').dropdown('close');
         startFlag = 0
+        hidden = false
+    }
+    if (hidden) {
+        return;
     }
     $("nav [name=main]").find(".time").text(lastCombat.duration);
     $("nav [name=main]").find(".info .bigText").text(lastCombat.title);
@@ -2455,7 +2461,7 @@ function saveLog() {
             }
             saveLogFlag = !0
             startFlag = lastCombat.isActive == 'false' ? 0 : 1
-            if (lastCombat.isActive == 'false') {
+            if (!hidden && lastCombat.isActive == 'false') {
                 autoHidden("OFF");
             }
         }
