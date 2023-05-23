@@ -14,6 +14,7 @@ var customFlag = !0;
 var initACTElement = [0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 var initHealerElement = [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];
 var OnlyUsers = 0;
+var autoHiddenToastSent = false
 var objTime;
 var mpLang = [];
 var dataAbbList = null;
@@ -693,7 +694,7 @@ function autoHidden(flag) {
                     $('body').find('#graphTableBody, #graphTableHeader').addClass('hidden')
                 }
                 if ($('body').find('[name=main]').hasClass("hidden") == !1 && localStorage.getItem("autoHide") == 1) {
-                    if (localStorage.getItem("toast") == 1) {
+                    if (!autoHiddenToastSent && localStorage.getItem("toast") == 1) {
                         if (localStorage.getItem('lang') == "kr")
                             var $toastContent = $('<div class="row col s12 white-text center">< 자동 숨기기 ><br>데이터 테이블을 다시 보고 싶다면 오버레이를 클릭하세요!</div>');
                         else if (localStorage.getItem("lang") == "cn")
@@ -703,6 +704,7 @@ function autoHidden(flag) {
                         else if (localStorage.getItem('lang') == "en")
                             var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>'); else var $toastContent = $('<div class="row col s12 white-text center">< Auto-hide ><br>Do you want to view data table again? Just Click on the Overlay!</div>');
                         Materialize.toast($toastContent, 3000)
+                        autoHiddenToastSent = true
                     }
                 }
             }, parseInt(localStorage.getItem('autoHideTime')) * 60000)
@@ -714,6 +716,7 @@ function autoHidden(flag) {
             else {
                 $('body').find('#graphTableBody, #graphTableHeader').removeClass('hidden')
             }
+            autoHiddenToastSent = false
             clearTimeout(objTime);
             if (lastCombat.title != 'Encounter')
                 autoHidden("OFF")
@@ -1717,8 +1720,6 @@ function onUpdateCSS() {
 }
 
 function onOverlayDataUpdate(e) {
-    if (localStorage.getItem('history') == 1)
-        closeHistory();
     lastCombat = new Combatant(e, 'encdps');
     lastCombatHPS = new Combatant(e, 'enchps');
     setTimeout(function () {
@@ -2444,7 +2445,7 @@ function saveLog() {
         if (lastCombat.title != 'Encounter') {
             encounterArray.unshift({lastCombat: lastCombat, lastCombatHPS: lastCombatHPS});
             if (encounterArray.length >= 2) {
-                if (encounterArray[1].combatKey == lastCombat.combatKey) {
+                if (encounterArray[1].lastCombat.combatKey == lastCombat.combatKey) {
                     encounterArray.shift()
                 } else {
                     historyAddRow()
@@ -2452,15 +2453,20 @@ function saveLog() {
             } else {
                 historyAddRow()
             }
-            autoHidden("OFF");
             saveLogFlag = !0
-            startFlag = 1
+            startFlag = lastCombat.isActive == 'false' ? 0 : 1
+            if (lastCombat.isActive == 'false') {
+                autoHidden("OFF");
+            }
         }
     }
 }
 
 function historyAddRow() {
-    console.log(lastCombat)
+    if (localStorage.getItem('history') == 1) {
+        closeHistory();
+    }
+    // console.log(lastCombat)
     var wrap = document.getElementById('historyListBody');
     var newHistory = document.createElement("div");
     var oldHistory = document.getElementById('oldHistoryBody');
