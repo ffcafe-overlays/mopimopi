@@ -15,7 +15,7 @@ var initACTElement = [0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1
 var initHealerElement = [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];
 var OnlyUsers = 0;
 var hidden = false
-var objTime;
+var objTimeArray = new Array();
 var mpLang = [];
 var dataAbbList = null;
 var palette = {
@@ -686,7 +686,10 @@ function autoHidden(flag) {
     if (localStorage.getItem("autoHide") == 0 || OnlyUsers == 0)
         return; else {
         if (flag == "OFF") {
-            objTime = setTimeout(function () {
+            if (hidden) {
+                return;
+            }
+            objTimeArray.unshift(setTimeout(function () {
                 if (hidden) {
                     return;
                 }
@@ -710,7 +713,7 @@ function autoHidden(flag) {
                         hidden = true
                     }
                 }
-            }, parseInt(localStorage.getItem('autoHideTime')) * 60000)
+            }, parseInt(localStorage.getItem('autoHideTime')) * 60000))
         }
         else {
             if (OnlyUsers > 9 && localStorage.getItem('raidMode') == 1) {
@@ -719,7 +722,12 @@ function autoHidden(flag) {
             else {
                 $('body').find('#graphTableBody, #graphTableHeader').removeClass('hidden')
             }
-            clearTimeout(objTime);
+            objTime = objTimeArray.shift()            
+            while (typeof(objTime) != 'undefined') {
+                clearTimeout(objTime);
+                objTime = objTimeArray.shift();
+            }
+            hidden = false
             if (lastCombat.title != 'Encounter')
                 autoHidden("OFF")
         }
@@ -1724,6 +1732,7 @@ function onUpdateCSS() {
 function onOverlayDataUpdate(e) {
     lastCombat = new Combatant(e, 'encdps');
     lastCombatHPS = new Combatant(e, 'enchps');
+    startFlag = lastCombat.isActive == 'false' ? 0 : 1
     setTimeout(function () {
         saveLog();
         update()
@@ -2460,8 +2469,7 @@ function saveLog() {
                 historyAddRow()
             }
             saveLogFlag = !0
-            startFlag = lastCombat.isActive == 'false' ? 0 : 1
-            if (!hidden && lastCombat.isActive == 'false') {
+            if (!hidden) {
                 autoHidden("OFF");
             }
         }
