@@ -1732,7 +1732,11 @@ function onUpdateCSS() {
 function onOverlayDataUpdate(e) {
     lastCombat = new Combatant(e, 'encdps');
     lastCombatHPS = new Combatant(e, 'enchps');
-    startFlag = lastCombat.isActive == 'false' ? 0 : 1
+    try {
+        startFlag = lastCombat?.isActive === 'true' ? 1 : 0
+    } catch (error) {
+        startFlag = 0
+    }
     setTimeout(function () {
         saveLog();
         update()
